@@ -1,6 +1,13 @@
 #ifndef DIJKSTRA_H_INCLUDED
 #define DIJKSTRA_H_INCLUDED
 
+#include "heap.h"
+
+typedef int boolean;
+#define NMAX 1000
+#define TRUE 1
+#define FALSE 0
+
 /*
  * What is relaxation in Dijkstra's algorithm?
  * In general mathematically, 'relaxation' is making a change that reduces constraints.
@@ -52,11 +59,11 @@
 
 
 void print_shortest_path(FILE *output, int start_vertex, adj_list *adjacency_list);
-void relax(node *node_of_vertex, float dist_to[], int edge_to[], int *size_of_heap, int pq[], float keys[]);
+void relax(node *node_of_vertex, float dist_to[], int edge_to[], MinHeap *h);
 void create_dijkstra_path(int start_vertex, adj_list *adjacency_list, float dist_to[], int edge_to[]);
 
 void minimum_spanning_tree(adj_list *adjacency_list);
-void relax_min_span_tree(node *node_of_vertex, float node_key[], int node_parent[], int *size_of_heap, int pq[], float keys[], boolean marked[]);
+void relax_min_span_tree(node *node_of_vertex, float node_key[], int node_parent[], MinHeap *h, boolean marked[]);
 void create_minimum_span_tree(int start_vertex, adj_list *adjacency_list, float node_key[], int node_parent[]);
 void create_minimum_span_tree_queue(adj_list *adjacency_list, float node_key[], int node_parent[]);
 

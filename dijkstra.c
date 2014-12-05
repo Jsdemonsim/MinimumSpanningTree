@@ -2,15 +2,14 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#include "min_binary_heap.h"
+#include "heap.h"
 #include "graph.h"
 #include "dijkstra.h"
 #include "queue.h"
 
 void print_shortest_path(FILE *output, int start_vertex, adj_list *adjacency_list)
 {
-    int pq[NMAX + 1];
-    float keys[NMAX];
+    MinHeap *h = Heap_Create();
     int size_of_heap = 0;
 
     float dist_to[NMAX];
@@ -28,14 +27,14 @@ void print_shortest_path(FILE *output, int start_vertex, adj_list *adjacency_lis
     // we have to make the priority queue such that every element (with INT_MAX)
     // is there in the priority queue and then we change the priority depending
     // upon their distance from start_vertex.
-    insert(start_vertex, &size_of_heap, dist_to[start_vertex], pq, keys);
+    Heap_Insert(h, start_vertex, dist_to[start_vertex]);
     while (size_of_heap > 0) {
-        int vertex = delete_min(&size_of_heap, pq, keys);
+        int vertex = Heap_ExtractMin(h);
         // bag *bag_of_vertex = *(adjacency_list->bags + vertex * sizeof(bag *));
         bag *bag_of_vertex = adjacency_list->bags[vertex];
         node *node_of_vertex = bag_of_vertex->first;
         while (node_of_vertex) {
-            relax(node_of_vertex, dist_to, edge_to, &size_of_heap, pq, keys);
+            relax(node_of_vertex, dist_to, edge_to, h);
             node_of_vertex = node_of_vertex->next;
         }
     }
@@ -43,7 +42,7 @@ void print_shortest_path(FILE *output, int start_vertex, adj_list *adjacency_lis
     create_dijkstra_path(start_vertex, adjacency_list, dist_to, edge_to);
 }
 
-void relax(node *node_of_vertex, float dist_to[], int edge_to[], int *size_of_heap, int pq[], float keys[])
+void relax(node *node_of_vertex, float dist_to[], int edge_to[], MinHeap *h)
 {
     int from, to;
     from = node_of_vertex->from;
@@ -52,7 +51,7 @@ void relax(node *node_of_vertex, float dist_to[], int edge_to[], int *size_of_he
     if (dist_to[to] > dist_to[from] + node_of_vertex->weight) {
         dist_to[to] = dist_to[from] + node_of_vertex->weight;
         edge_to[to] = from;
-        insert(to, size_of_heap, dist_to[to], pq, keys);
+        Heap_Insert(h, to, dist_to[to]);
     }
 }
 
@@ -83,34 +82,32 @@ void create_dijkstra_path(int start_vertex, adj_list *adjacency_list, float dist
  */
 void minimum_spanning_tree(adj_list *adjacency_list)
 {
-    int pq[NMAX + 1];
-    float keys[NMAX];
-    int size_of_heap = 0;
-
+    MinHeap *h = Heap_Create();
     float node_key[NMAX];
     int node_parent[NMAX];
     boolean marked[NMAX] = { FALSE };
+    int count = 0;
 
     for (int i = 0; i < adjacency_list->no_vert; i++) {
         node_key[i] = INT_MAX;
         node_parent[i] = -1;
-        insert(i, &size_of_heap, node_key[i], pq, keys);
+        Heap_Insert(h, i, node_key[i]);
     }
 
     int start_vertex = 0;
 
     node_key[start_vertex] = 0.0;
     node_parent[start_vertex] = 0;
-    decrease_key(start_vertex, &size_of_heap, node_key[start_vertex], pq, keys);
+    Heap_DecreaseKey(h, start_vertex, node_key[start_vertex]);
 
-    while (size_of_heap > 0) {
-        int vertex = delete_min(&size_of_heap, pq, keys);
+    while (Heap_Size(h) > 0) {
+        int vertex = Heap_ExtractMin(h);
         marked[vertex] = TRUE;  // Why marked? Because once an element is deleted
                                 // from a queue it is marked i.e. is already included.
         bag *bag_of_vertex = adjacency_list->bags[vertex];
         node *node_of_vertex = bag_of_vertex->first;
         while (node_of_vertex != NULL) {
-            relax_min_span_tree(node_of_vertex, node_key, node_parent, &size_of_heap, pq, keys, marked);
+            relax_min_span_tree(node_of_vertex, node_key, node_parent, h, marked);
             node_of_vertex = node_of_vertex->next;
         }
     }
@@ -129,7 +126,7 @@ void minimum_spanning_tree(adj_list *adjacency_list)
  * \param keys[] float
  * \return void
  */
-void relax_min_span_tree(node *node_of_vertex, float node_key[], int node_parent[], int *size_of_heap, int pq[], float keys[], boolean marked[])
+void relax_min_span_tree(node *node_of_vertex, float node_key[], int node_parent[], MinHeap *h, boolean marked[])
 {
     int from, to;
     from = node_of_vertex->from;
@@ -140,7 +137,7 @@ void relax_min_span_tree(node *node_of_vertex, float node_key[], int node_parent
     if (node_of_vertex->weight < node_key[to]) {
         node_key[to] = node_of_vertex->weight;
         node_parent[to] = from;
-        decrease_key(to, size_of_heap, node_key[to], pq, keys);
+        Heap_DecreaseKey(h, to, node_key[to]);
     }
 }
 
